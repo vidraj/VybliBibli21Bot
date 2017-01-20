@@ -13,6 +13,7 @@ from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
 from keras.layers.recurrent import LSTM
 from keras.layers.core import Dense, Dropout, Activation
+from keras.callbacks import ModelCheckpoint
 
 
 # Load the corpus from the STDIN.
@@ -59,8 +60,13 @@ model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
+# Allow checkpointing of an unfinished model after each epoch.
+filepath="vybli-checkpoint-32-lstm256+drop0.2+lstm256+drop0.2-{epoch:02d}-{loss:.4f}.h5"
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
+
 # Train the model.
-model.fit(x, y, nb_epoch=50, batch_size=128)
+model.fit(x, y, nb_epoch=50, batch_size=128, callbacks=callbacks_list)
 
 # Save the result.
 model.save(sys.argv[1])
