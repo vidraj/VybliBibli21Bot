@@ -114,8 +114,24 @@ print("‘Hos’ predicts ‘%s’" % dictchar[numpy.argmax(prediction2)])
 #numpy.argmax(predictions[1])
 
 
+## Generate new text.
 
-
+# Pick a random seed to kick the process off.
+start = numpy.random.randint(0, len(dataX)-1)
+pattern = dataX[start]
+print("Seed: “%s”" % (''.join([dictchar[value] for value in pattern])))
+# generate characters
+for i in range(1000):
+	x = numpy.reshape(pattern, (1, len(pattern), 1))
+	x = x / float(len(chardict))
+	prediction = model.predict(x, verbose=0)
+	index = numpy.argmax(prediction)
+	result = dictchar[index]
+	seq_in = [dictchar[value] for value in pattern]
+	sys.stdout.write(result)
+	pattern.append(index)
+	pattern = pattern[1:len(pattern)]
+print("\nDone.")
 
 
 
