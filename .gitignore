@@ -1,0 +1,9 @@
+# Ignore the files with login data.
+credentials
+credentials.py
+
+# Ignore the potentially nonredistributable stuff. Everybody should download it for themselves.
+Bible21+-2015-pro-web.pdf
+
+# Ignore the buildable files.
+bible21.txt
