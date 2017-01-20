@@ -76,24 +76,23 @@ model.save(sys.argv[1])
 
 
 
-
+# Create a single test data point and convert it into numbers in the correct format.
 candidate = numpy.reshape([chardict['b'], chardict['y'], chardict['l']], (1,3,1))
-
+# Convert into floats.
 candidate = candidate/len(chardict)
-
+# Predict the next char probability distribution.
 prediction = model.predict(candidate)
 
 #prediction
 #sum(sum(prediction))
 # -> ~1
 
-
+# Retrieve the most likely next char.
 answer = numpy.argmax(prediction)
 print("‘byl’ predicts ‘%s’" % dictchar[answer])
 
 
-#prediction[0][chardict['G']]
-
+# Do the same for another datapoint.
 candidate2 = numpy.reshape([chardict['H'], chardict['o'], chardict['s']], (1,3,1))
 #candidate2
 candidate2 = candidate2/len(chardict)
