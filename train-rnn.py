@@ -33,7 +33,7 @@ fulltext = [chardict[ch] for ch in list(everything)]
 
 
 # How many previous chars to supply as features for training?
-seqlen = 3
+seqlen = 32
 
 # Convert the corpus to features.
 dataX = []
@@ -52,13 +52,15 @@ x = x/len(chardict)
 
 # Create the Keras model.
 model = Sequential()
-model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2])))
+model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(256))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 # Train the model.
-model.fit(x, y, nb_epoch=1, batch_size=128)
+model.fit(x, y, nb_epoch=50, batch_size=128)
 
 # Save the result.
 model.save(sys.argv[1])
