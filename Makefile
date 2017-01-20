@@ -1,7 +1,8 @@
 .PHONY: clean
 
 vybli-model.h5: bible21.txt
-	./train-rnn.py "$@" < "$<"
+	ulimit -t unlimited
+	nice -n 19 ./train-rnn.py "$@" < "$<"
 
 bible21.txt: Bible21+-2015-pro-web.pdf
 	pdftotext -eol unix -enc UTF-8 -f 19 -l 1830 "$<" - | sed -e 's/ﬁ\s*/fi/g;s/ﬂ/fl/g;s/˝//g' > "$@"
