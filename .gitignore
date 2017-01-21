@@ -8,4 +8,4 @@ Bible21+-2015-pro-web.pdf
 # Ignore the buildable files.
 bible21.txt
 bible21-small.txt
-vybli-model*.h5
+vybli-*.h5
