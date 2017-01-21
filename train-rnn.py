@@ -65,23 +65,21 @@ x = x/len(dictchar)
 
 # Create the Keras model.
 model = Sequential()
-model.add(LSTM(network_width, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
+model.add(LSTM(network_width, stateful=True, batch_input_shape=(batch_size, seqlen, 1), return_sequences=True))
 model.add(Dropout(dropout_strength))
-model.add(LSTM(network_width))
+model.add(LSTM(network_width, stateful=True))
 model.add(Dropout(dropout_strength))
 model.add(Dense(len(dictchar), activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 # Allow checkpointing of an unfinished model after each epoch.
-filepath="vybli-checkpoint-32-lstm256+drop0.2+lstm256+drop0.2-{epoch:02d}-{loss:.4f}.h5"
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
+#checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+#callbacks_list = [checkpoint]
 
 # Train the model.
-model.fit(x, y, nb_epoch=nr_epochs, batch_size=batch_size, callbacks=callbacks_list)
-
-# Save the result.
-model.save(sys.argv[1])
-
-
-
+for epoch in range(nr_epochs):
+	# Other params: callbacks=callbacks_list
+	#               initial_epoch=epoch      # Not yet in the version from pip.
+	model.fit(x, y, nb_epoch=1, batch_size=batch_size, shuffle=False)
+	model.save("%s-%d-lstm%d+drop%f+lstm%d+drop%f-%d.h5" % (sys.argv[1], seqlen, network_width, dropout_strength, network_width, dropout_strength, epoch))
+	model.reset_states()
