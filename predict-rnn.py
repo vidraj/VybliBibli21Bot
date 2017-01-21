@@ -7,7 +7,6 @@ if len(sys.argv) != 2:
 	sys.exit(1)
 
 
-import os
 import numpy
 from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
@@ -37,13 +36,9 @@ seqlen = 32
 
 # Convert the corpus to features.
 dataX = []
-dataY = []
 for i in range(0, len(fulltext) - seqlen, 1):
 	dataX.append(fulltext[i:i+seqlen])
-	dataY.append(fulltext[i+seqlen])
 
-# The output value should be one-hot encoded.
-y = to_categorical(dataY)
 
 # The input values have to be reoriented; they are expressed as floats in [0, 1].
 x = numpy.reshape(dataX, (len(dataX), seqlen, 1))
@@ -76,7 +71,6 @@ for i in range(1000):
 	prediction = model.predict(x, verbose=0)
 	index = numpy.argmax(prediction)
 	result = dictchar[index]
-	#seq_in = [dictchar[value] for value in pattern]
 	sys.stdout.write(result)
 	pattern.append(index)
 	pattern = pattern[1:len(pattern)]
