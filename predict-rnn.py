@@ -7,6 +7,7 @@ if len(sys.argv) != 2:
 	sys.exit(1)
 
 
+import os
 import numpy
 from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
@@ -36,9 +37,13 @@ seqlen = 32
 
 # Convert the corpus to features.
 dataX = []
+dataY = []
 for i in range(0, len(fulltext) - seqlen, 1):
 	dataX.append(fulltext[i:i+seqlen])
+	dataY.append(fulltext[i+seqlen])
 
+# The output value should be one-hot encoded.
+y = to_categorical(dataY)
 
 # The input values have to be reoriented; they are expressed as floats in [0, 1].
 x = numpy.reshape(dataX, (len(dataX), seqlen, 1))
@@ -51,7 +56,7 @@ model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True)
 model.add(Dropout(0.2))
 model.add(LSTM(256))
 model.add(Dropout(0.2))
-model.add(Dense(len(chardict), activation="softmax"))
+model.add(Dense(y.shape[1], activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 model.load_weights(sys.argv[1])
@@ -64,19 +69,15 @@ model.load_weights(sys.argv[1])
 start = numpy.random.randint(0, len(dataX)-1)
 pattern = dataX[start]
 print("Seed: “%s”" % (''.join([dictchar[value] for value in pattern])))
-x = numpy.reshape(pattern, (1, len(pattern), 1))
-x = x / float(len(chardict))
 # Generate characters starting with that seed.
-generated_text = ""
 for i in range(1000):
-	prediction = model.predict(x) # , verbose=0
-	index = numpy.argmax(prediction[-1])
-	generated_text += dictchar[index]
+	x = numpy.reshape(pattern, (1, len(pattern), 1))
+	x = x / float(len(chardict))
+	prediction = model.predict(x, verbose=0)
+	index = numpy.argmax(prediction)
+	result = dictchar[index]
+	#seq_in = [dictchar[value] for value in pattern]
+	sys.stdout.write(result)
 	pattern.append(index)
 	pattern = pattern[1:len(pattern)]
-	nx = numpy.reshape(pattern, (1, len(pattern), 1))
-	nx = nx / float(len(chardict))
-	x = numpy.concatenate((x, nx))
-	#print("Our corpus is: ", x)
-
-print("\n\nGenerated text: “%s”" % generated_text)
+print("\nDone.")
