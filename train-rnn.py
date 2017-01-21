@@ -20,13 +20,11 @@ from keras.callbacks import ModelCheckpoint
 everything = sys.stdin.read()
 
 
-# Find all the character types occuring in the corpus.
-allchars = sorted(list(set(everything)))
+# Find all the character types occuring in the corpus. Also serves as mapping from char-IDs to chars
+dictchar = sorted(list(set(everything)))
 
 # A dictionary which contains a mapping from chars to numbers. Each char gets its own unique number.
-chardict = dict(zip(allchars, range(0, len(allchars))))
-# Reverse mapping from numbers to chars.
-dictchar = dict(zip(chardict.values(), chardict.keys()))
+chardict = dict(zip(dictchar, range(0, len(dictchar))))
 
 # Convert the corpus from chars to character numbers.
 fulltext = [chardict[ch] for ch in list(everything)]
