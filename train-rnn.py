@@ -51,7 +51,7 @@ nr_epochs = 20
 # Convert the corpus to features.
 dataX = []
 dataY = []
-for i in range(0, len(fulltext) - seqlen, 1):
+for i in range(0, ((len(fulltext) - seqlen) // batch_size) * batch_size, 1):
 	dataX.append(fulltext[i:i+seqlen])
 	dataY.append(fulltext[i+seqlen])
 
