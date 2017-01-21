@@ -34,7 +34,19 @@ del(everything)
 
 
 # How many previous chars to supply as features for training?
-seqlen = 32
+seqlen = 6
+# How wide should each LSTM layer be?
+network_width = 256
+# Strength of dropout after each LSTM layer.
+dropout_strength = 0.05
+# The batch size. Since the LSTM is stateful, this is required both for training and for testing.
+batch_size = 64
+# How many epochs to train for?
+nr_epochs = 20
+
+# The corpus size must be a multiple of batchsize for stateful training.
+#rounded_fulltext_size = (len(fulltext) // batch_size) * batch_size
+#fulltext = fulltext[:rounded_fulltext_size + seqlen - 1]
 
 # Convert the corpus to features.
 dataX = []
@@ -48,16 +60,16 @@ y = to_categorical(dataY)
 
 # The input values have to be reoriented; they are expressed as floats in [0, 1].
 x = numpy.reshape(dataX, (len(dataX), seqlen, 1))
-x = x/len(chardict)
+x = x/len(dictchar)
 
 
 # Create the Keras model.
 model = Sequential()
-model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
-model.add(Dropout(0.2))
-model.add(LSTM(256))
-model.add(Dropout(0.2))
-model.add(Dense(y.shape[1], activation="softmax"))
+model.add(LSTM(network_width, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
+model.add(Dropout(dropout_strength))
+model.add(LSTM(network_width))
+model.add(Dropout(dropout_strength))
+model.add(Dense(len(dictchar), activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 # Allow checkpointing of an unfinished model after each epoch.
@@ -66,7 +78,7 @@ checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only
 callbacks_list = [checkpoint]
 
 # Train the model.
-model.fit(x, y, nb_epoch=50, batch_size=128, callbacks=callbacks_list)
+model.fit(x, y, nb_epoch=nr_epochs, batch_size=batch_size, callbacks=callbacks_list)
 
 # Save the result.
 model.save(sys.argv[1])
