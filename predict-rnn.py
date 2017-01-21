@@ -3,7 +3,7 @@
 import sys
 
 if len(sys.argv) != 2:
-	sys.stderr.write("Error: filename for model saving required.\nUsage:\n\t%s model-file\n" % (sys.argv[0]))
+	sys.stderr.write("Error: filename for model loading required.\nUsage:\n\t%s model-file\n" % (sys.argv[0]))
 	sys.exit(1)
 
 
@@ -13,7 +13,6 @@ from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
 from keras.layers.recurrent import LSTM
 from keras.layers.core import Dense, Dropout, Activation
-from keras.callbacks import ModelCheckpoint
 
 
 # Load the corpus from the STDIN.
@@ -60,64 +59,8 @@ model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
 
-# Allow checkpointing of an unfinished model after each epoch.
-filepath="vybli-checkpoint-32-lstm256+drop0.2+lstm256+drop0.2-{epoch:02d}-{loss:.4f}.h5"
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
+model.load_weights(sys.argv[1])
 
-# Train the model.
-model.fit(x, y, nb_epoch=50, batch_size=128, callbacks=callbacks_list)
-
-# Save the result.
-model.save(sys.argv[1])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Create a single test data point and convert it into numbers in the correct format.
-candidate = numpy.reshape([chardict['b'], chardict['y'], chardict['l']], (1,3,1))
-# Convert into floats.
-candidate = candidate/len(chardict)
-# Predict the next char probability distribution.
-prediction = model.predict(candidate)
-
-#prediction
-#sum(sum(prediction))
-# -> ~1
-
-# Retrieve the most likely next char.
-answer = numpy.argmax(prediction)
-print("‘byl’ predicts ‘%s’" % dictchar[answer])
-
-
-# Do the same for another datapoint.
-candidate2 = numpy.reshape([chardict['H'], chardict['o'], chardict['s']], (1,3,1))
-#candidate2
-candidate2 = candidate2/len(chardict)
-prediction2 = model.predict(candidate2)
-#prediction2[0][chardict['-']]
-#prediction2[0][chardict['a']]
-print("‘Hos’ predicts ‘%s’" % dictchar[numpy.argmax(prediction2)])
-
-#candidate3 = numpy.reshape([chardict['a'], chardict['?'], chardict['-']], (1,3,1))
-#candidate3 = candidate3/len(chardict)
-#candidates = numpy.array([candidate2,candidate3])
-##candidates.shape
-#candidates2 = candidates.reshape(2,3,1)
-##candidates2
-#predictions = model.predict(candidates2)
-#numpy.argmax(predictions[0])
-#numpy.argmax(predictions[1])
 
 
 ## Generate new text.
@@ -138,13 +81,3 @@ for i in range(1000):
 	pattern.append(index)
 	pattern = pattern[1:len(pattern)]
 print("\nDone.")
-
-
-
-
-
-
-
-
-
-
