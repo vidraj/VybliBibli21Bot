@@ -58,29 +58,30 @@ model = load_model(sys.argv[1])
 
 ## Generate new text.
 
-# Pick a random seed to kick the process off.
-start = numpy.random.randint(0, len(dataX) - batch_size - 1)
-x = dataX[start:start + batch_size]
-last_window = x[-1]
-print("Seed ends with: “%s”" % (''.join([dictchar[value] for value in last_window])))
-x = numpy.reshape(x, (batch_size, seqlen, 1))
-x = x / float(len(chardict))
+for tweet in range(20):
+	# Pick a random seed to kick the process off.
+	start = numpy.random.randint(0, len(dataX) - batch_size - 1)
+	x = dataX[start:start + batch_size]
+	last_window = x[-1]
+	print("\n\nSeed ends with: “%s”" % (''.join([dictchar[value] for value in last_window])))
+	x = numpy.reshape(x, (batch_size, seqlen, 1))
+	x = x / float(len(chardict))
 
-# Generate characters starting with that seed.
-generated_text = ""
+	# Generate characters starting with that seed.
+	generated_text = ""
 
-for i in range(1000):
-	sys.stdout.write('.')
-	sys.stdout.flush()
-	predictions = model.predict_on_batch(x) # , verbose=0
-	index = numpy.random.choice(len(chardict), p=predictions[-1])
-	generated_text += dictchar[index]
-	
-	last_window.append(index)
-	last_window = last_window[1:len(last_window)]
-	nx = numpy.reshape(last_window, (1, len(last_window), 1))
-	nx = nx / float(len(chardict))
-	x = numpy.concatenate((x, nx))[1:]
-	#print("Our corpus is: ", x)
+	for i in range(256):
+		#sys.stdout.write('.')
+		#sys.stdout.flush()
+		predictions = model.predict_on_batch(x) # , verbose=0
+		index = numpy.random.choice(len(chardict), p=predictions[-1])
+		generated_text += dictchar[index]
 
-print("\n\nGenerated text: “%s”" % generated_text)
+		last_window.append(index)
+		last_window = last_window[1:len(last_window)]
+		nx = numpy.reshape(last_window, (1, len(last_window), 1))
+		nx = nx / float(len(chardict))
+		x = numpy.concatenate((x, nx))[1:]
+		#print("Our corpus is: ", x)
+
+	print("Generated text: “%s”" % generated_text)
