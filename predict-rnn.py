@@ -67,6 +67,8 @@ x = x / float(len(chardict))
 # Generate characters starting with that seed.
 generated_text = ""
 for i in range(1000):
+	sys.stdout.write('.')
+	sys.stdout.flush()
 	predictions = model.predict(x) # , verbose=0
 	index = numpy.random.choice(len(chardict), p=predictions[-1])
 	generated_text += dictchar[index]
