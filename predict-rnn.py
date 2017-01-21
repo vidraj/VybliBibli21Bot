@@ -22,7 +22,7 @@ everything = sys.stdin.read()
 dictchar = sorted(list(set(everything)))
 
 # A dictionary which contains a mapping from chars to numbers. Each char gets its own unique number.
-chardict = dict(zip(allchars, range(0, len(allchars))))
+chardict = dict(zip(dictchar, range(0, len(dictchar))))
 
 # Convert the corpus from chars to character numbers.
 fulltext = [chardict[ch] for ch in list(everything)]
