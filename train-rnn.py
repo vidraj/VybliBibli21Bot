@@ -29,6 +29,8 @@ chardict = dict(zip(dictchar, range(0, len(dictchar))))
 # Convert the corpus from chars to character numbers.
 fulltext = [chardict[ch] for ch in list(everything)]
 
+# The cleartext is no longer needed.
+del(everything)
 
 
 # How many previous chars to supply as features for training?
