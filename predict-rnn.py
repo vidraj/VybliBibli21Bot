@@ -8,10 +8,7 @@ if len(sys.argv) != 2:
 
 
 import numpy
-from keras.utils.np_utils import to_categorical
-from keras.models import Sequential
-from keras.layers.recurrent import LSTM
-from keras.layers.core import Dense, Dropout, Activation
+from keras.models import load_model
 
 
 # Load the corpus from the STDIN.
@@ -44,14 +41,15 @@ x = x/len(chardict)
 
 
 # Load the Keras model.
-model = Sequential()
-model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
-model.add(Dropout(0.2))
-model.add(LSTM(256))
-model.add(Dropout(0.2))
-model.add(Dense(len(chardict), activation="softmax"))
-model.load_weights(sys.argv[1])
-model.compile(loss="categorical_crossentropy", optimizer="adam")
+model = load_model(sys.argv[1])
+#model = Sequential()
+#model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
+#model.add(Dropout(0.2))
+#model.add(LSTM(256))
+#model.add(Dropout(0.2))
+#model.add(Dense(len(chardict), activation="softmax"))
+#model.load_weights(sys.argv[1])
+#model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 
 
