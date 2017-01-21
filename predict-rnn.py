@@ -64,14 +64,19 @@ model.load_weights(sys.argv[1])
 start = numpy.random.randint(0, len(dataX)-1)
 pattern = dataX[start]
 print("Seed: “%s”" % (''.join([dictchar[value] for value in pattern])))
+x = numpy.reshape(pattern, (1, len(pattern), 1))
+x = x / float(len(chardict))
 # Generate characters starting with that seed.
+generated_text = ""
 for i in range(1000):
-	x = numpy.reshape(pattern, (1, len(pattern), 1))
-	x = x / float(len(chardict))
-	prediction = model.predict(x, verbose=0)
-	index = numpy.argmax(prediction)
-	result = dictchar[index]
-	sys.stdout.write(result)
+	prediction = model.predict(x) # , verbose=0
+	index = numpy.argmax(prediction[-1])
+	generated_text += dictchar[index]
 	pattern.append(index)
 	pattern = pattern[1:len(pattern)]
-print("\nDone.")
+	nx = numpy.reshape(pattern, (1, len(pattern), 1))
+	nx = nx / float(len(chardict))
+	x = numpy.concatenate((x, nx))
+	#print("Our corpus is: ", x)
+
+print("\n\nGenerated text: “%s”" % generated_text)
