@@ -10,7 +10,7 @@ bible21-small.txt: bible21.txt
 	head -c 500000 "$<" > "$@"
 
 bible21.txt: Bible21+-2015-pro-web.pdf
-	pdftotext -eol unix -enc UTF-8 -f 19 -l 1830 "$<" - | sed -e 's/ﬁ\s*/fi/g;s/ﬂ/fl/g;s/˝//g' > "$@"
+	pdftotext -eol unix -enc UTF-8 -f 19 -l 1830 -layout "$<" - | sed -e 's/ﬁ\s*/fi/g;s/ﬂ/fl/g;s/˝//g;/^\f/ d;s/  */ /g' > "$@"
 
 Bible21+-2015-pro-web.pdf:
 	wget 'http://www.bible21.cz/wp-content/uploads/2014/03/Bible21+-2015-pro-web.pdf' -O "$@"
