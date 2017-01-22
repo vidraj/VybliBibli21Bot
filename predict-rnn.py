@@ -85,3 +85,4 @@ for tweet in range(20):
 		#print("Our corpus is: ", x)
 
 	print("Generated text: “%s”" % generated_text)
+	model.reset_states()
