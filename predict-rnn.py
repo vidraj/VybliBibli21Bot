@@ -44,14 +44,6 @@ x = x/len(chardict)
 
 # Load the Keras model.
 model = load_model(sys.argv[1])
-#model = Sequential()
-#model.add(LSTM(256, input_shape=(x.shape[1], x.shape[2]), return_sequences=True))
-#model.add(Dropout(0.2))
-#model.add(LSTM(256))
-#model.add(Dropout(0.2))
-#model.add(Dense(len(chardict), activation="softmax"))
-#model.load_weights(sys.argv[1])
-#model.compile(loss="categorical_crossentropy", optimizer="adam")
 
 
 
