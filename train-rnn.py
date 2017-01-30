@@ -167,11 +167,11 @@ fulltext_features = char_vec_to_feature(fulltext)
 
 
 # How many previous chars to supply as features for training?
-seqlen = 6
+seqlen = 32
 # How long is a feature-vector?
 feature_vec_len = len(fulltext_features[0])
 # How wide should each LSTM layer be?
-network_width = 256
+network_width = 512
 # Strength of dropout after each LSTM layer.
 dropout_strength = 0.05
 # The batch size. Since the LSTM is stateful, this is required both for training and for testing.
@@ -202,10 +202,16 @@ dataY = numpy.array(dataY)
 #sys.exit(1)
 
 # Create the Keras model.
+# batch_input_shape = (batch_size, input_length, input_dim)
 model = Sequential()
-model.add(LSTM(network_width, stateful=stateful_lstm, batch_input_shape=(batch_size, seqlen, feature_vec_len), return_sequences=True))
+model.add(TimeDistributed(Dense(network_width), batch_input_shape=(batch_size, seqlen, feature_vec_len)))
+#model.add(LSTM(network_width, stateful=stateful_lstm, consume_less='gpu', return_sequences=True, batch_input_shape=(batch_size, seqlen, feature_vec_len)))
 model.add(Dropout(dropout_strength))
-model.add(LSTM(network_width, stateful=stateful_lstm))
+model.add(TimeDistributed(Dense(network_width)))
+model.add(Dropout(dropout_strength))
+#model.add(LSTM(network_width, stateful=stateful_lstm, consume_less='gpu', return_sequences=True))
+#model.add(Dropout(dropout_strength))
+model.add(LSTM(network_width, stateful=stateful_lstm, consume_less='gpu'))
 model.add(Dropout(dropout_strength))
 model.add(Dense(len(dictchar), activation="softmax"))
 
@@ -216,7 +222,7 @@ model.add(Dense(len(dictchar), activation="softmax"))
 
 if (action == Action.TRAIN):
 	model.compile(loss="categorical_crossentropy", optimizer="adam")
-	model_basename = "%s-%d-dense%d+drop%f+dense%d+drop%f+lstm%d+drop%f+lstm%d+drop%f" % (modelname, seqlen, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength)
+	model_basename = "%s-%d-dense%d+drop%f+dense%d+drop%f+lstm%d+drop%f" % (modelname, seqlen, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength)
 	
 	# Train the model.
 	if stateful_lstm:
