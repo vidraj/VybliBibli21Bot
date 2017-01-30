@@ -4,8 +4,13 @@ credentials.py
 
 # Ignore the potentially nonredistributable stuff. Everybody should download it for themselves.
 Bible21+-2015-pro-web.pdf
+SF_2009-01-23_ENG_KJV_(KING JAMES VERSION).xml
+SF_2009-01-23_ENG_KJV_(KING JAMES VERSION).zip
+SF_2016-10-10_CZE_CZEB21_(CZECH BIBLE, PREKLAD 21_STOLETI).xml
+SF_2016-10-10_CZE_CZEB21_(CZECH BIBLE, PREKLAD 21_STOLETI).zip
 
 # Ignore the buildable files.
 bible21.txt
 bible21-small.txt
 vybli-*.h5
+perplexity.png

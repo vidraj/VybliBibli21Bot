@@ -24,4 +24,6 @@ clean:
 	rm -f bible21.txt bible21-small.txt vybli-model.h5 vybli-model-small.h5
 	#rm -f vybli-checkpoint-*.h5
 
+perplexity.png: perplexity.gnuplot perplexity.tsv
+	gnuplot "$<"
 
