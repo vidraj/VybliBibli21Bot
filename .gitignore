@@ -11,6 +11,6 @@ SF_2016-10-10_CZE_CZEB21_(CZECH BIBLE, PREKLAD 21_STOLETI).zip
 
 # Ignore the buildable files.
 bible21.txt
-bible21-small.txt
+biblekjv.txt
 vybli-*.h5
 perplexity.png
