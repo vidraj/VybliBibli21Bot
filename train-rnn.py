@@ -7,6 +7,7 @@ import sys
 import os
 from enum import Enum, unique
 import numpy
+import re
 from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
 from keras.layers.recurrent import LSTM
@@ -53,22 +54,98 @@ modelname = sys.argv[2]
 corpusname = sys.argv[3]
 
 # Load the corpus from the STDIN.
-#everything = list(sys.stdin.read())
+#fulltext = list(sys.stdin.read())
 with open(corpusname, "rb") as f: # Binary mode for cross-compatibility between Python2 and Python3 – in 2, there is no difference and I have to call decode on the returned value. In 3, I can only call decode on bytes, which are returned in binary mode only. Therefore choose binary.
-	everything = list(f.read().decode('utf-8'))
+	fulltext = list(f.read().decode('utf-8'))
 
 
 # Find all the character types occuring in the corpus. Also serves as mapping from char-IDs to chars
-dictchar = sorted(list(set(everything)))
+dictchar = sorted(list(set(fulltext)))
 
 # A dictionary which contains a mapping from chars to numbers. Each char gets its own unique number.
-chardict = dict(zip(dictchar, range(0, len(dictchar))))
+chardict = dict(zip(dictchar, range(len(dictchar))))
 
-# Convert the corpus from chars to character numbers.
-fulltext = [chardict[ch] for ch in list(everything)]
+vowels = set()
+consonants = set()
+numerals = set()
+punctuations = set()
 
-# The cleartext is no longer needed.
-del(everything)
+for char in dictchar:
+	if char.isupper():
+		# Don't process uppercase. This is potentially bad, because down- and upcasing
+		#  are not necessarily reversible. It is in Czech and English, though, which
+		#  is what I care about.
+		char = char.lower()
+
+	if re.match(u"^[aáeéěiíyýoóuúů]$", char):
+		# A vowel.
+		vowels.add(char)
+	elif char.isalpha():
+		# An alphanumeric char that is not a vowel.
+		consonants.add(char)
+	elif char.isdigit(): # .isdecimal() doesn't exist in Python2
+		# A number.
+		numerals.add(char)
+	else:
+		# Anything else gets classified as punctuation, including spaces, newlines and whatnot.
+		punctuations.add(char)
+
+#print("Vowels: ", vowels, "\nConsonants: ", consonants, "\nNumerals: ", numerals, "\nOther stuff: ", punctuations)
+
+def make_dict(charlist):
+	return dict(zip(sorted(list(charlist)), map(lambda x: float(x+1)/len(charlist), range(len(charlist)))))
+
+vowel_dict = make_dict(vowels)
+consonant_dict = make_dict(consonants)
+numeral_dict = make_dict(numerals)
+punctuation_dict = make_dict(punctuations)
+
+
+## TODO test of predictions
+#vowel_dict = {u'a': 0.07142857142857142, u'\xe1': 0.5, u'e': 0.14285714285714285, u'i': 0.21428571428571427, u'\xed': 0.6428571428571429, u'o': 0.2857142857142857, u'\xe9': 0.5714285714285714, u'\xf3': 0.7142857142857143, u'u': 0.35714285714285715, u'\u016f': 1.0, u'y': 0.42857142857142855, u'\u011b': 0.9285714285714286, u'\xfa': 0.7857142857142857, u'\xfd': 0.8571428571428571}
+#consonant_dict = {u'\u010d': 0.7692307692307693, u'\u010f': 0.8076923076923077, u'\u0148': 0.8461538461538461, u'\u0159': 0.8846153846153846, u'\u0161': 0.9230769230769231, u'c': 0.07692307692307693, u'b': 0.038461538461538464, u'\u0165': 0.9615384615384616, u'd': 0.11538461538461539, u'g': 0.19230769230769232, u'f': 0.15384615384615385, u'h': 0.23076923076923078, u'k': 0.3076923076923077, u'j': 0.2692307692307692, u'm': 0.38461538461538464, u'l': 0.34615384615384615, u'n': 0.4230769230769231, u'q': 0.5, u'p': 0.46153846153846156, u's': 0.5769230769230769, u'r': 0.5384615384615384, u't': 0.6153846153846154, u'v': 0.6538461538461539, u'x': 0.6923076923076923, u'z': 0.7307692307692307, u'\u017e': 1.0}
+#numeral_dict = {u'1': 0.2, u'0': 0.1, u'3': 0.4, u'2': 0.3, u'5': 0.6, u'4': 0.5, u'7': 0.8, u'6': 0.7, u'9': 1.0, u'8': 0.9}
+#punctuation_dict = {u'!': 0.1875, u' ': 0.125, u'"': 0.25, u"'": 0.3125, u')': 0.4375, u'(': 0.375, u'\n': 0.0625, u'-': 0.5625, u',': 0.5, u'.': 0.625, u'\u201a': 1.0, u';': 0.75, u':': 0.6875, u']': 0.9375, u'[': 0.875, u'?': 0.8125}
+##dictchar = [u'\n', u' ', u'!', u"'", u'(', u')', u',', u'-', u'.', u'0', u'1', u'2', u'3', u'4', u'5', u'6', u'7', u'8', u'9', u':', u';', u'?', u'A', u'B', u'C', u'D', u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'W', u'Y', u'Z', u'a', u'b', u'c', u'd', u'e', u'f', u'g', u'h', u'i', u'j', u'k', u'l', u'm', u'n', u'o', u'p', u'q', u'r', u's', u't', u'u', u'v', u'w', u'x', u'y', u'z']
+#dictchar = [u'\n', u' ', u'!', u'"', u"'", u'(', u')', u',', u'-', u'.', u'0', u'1', u'2', u'3', u'4', u'5', u'6', u'7', u'8', u'9', u':', u';', u'?', u'A', u'B', u'C', u'D', u'E', u'F', u'G', u'H', u'I', u'J', u'K', u'L', u'M', u'N', u'O', u'P', u'Q', u'R', u'S', u'T', u'U', u'V', u'X', u'Y', u'Z', u'[', u']', u'a', u'b', u'c', u'd', u'e', u'f', u'g', u'h', u'i', u'j', u'k', u'l', u'm', u'n', u'o', u'p', u'r', u's', u't', u'u', u'v', u'x', u'y', u'z', u'\xc1', u'\xc9', u'\xcd', u'\xd3', u'\xda', u'\xdd', u'\xe1', u'\xe9', u'\xed', u'\xf3', u'\xfa', u'\xfd', u'\u010c', u'\u010d', u'\u010e', u'\u010f', u'\u011a', u'\u011b', u'\u0148', u'\u0158', u'\u0159', u'\u0160', u'\u0161', u'\u0165', u'\u016e', u'\u016f', u'\u017d', u'\u017e', u'\u201a']
+#chardict = dict(zip(dictchar, range(len(dictchar))))
+
+#print("Vowel dict: ", sorted(vowel_dict, key=vowel_dict.get), "\nConsonant dict: ", sorted(consonant_dict, key=consonant_dict.get), "\nNumeral dict: ", sorted(numeral_dict, key=numeral_dict.get), "\nOther stuff dict: ", sorted(punctuation_dict, key=punctuation_dict.get), "\nDictchar: ", dictchar)
+
+def char_to_feature(char):
+	#return [chardict[char]/len(chardict)]
+	#return to_categorical([chardict[char]], nb_classes=len(dictchar))[0]
+	
+	#assert(len(char) == 1)
+	lc_form = char.lower()
+
+	return [float(char.isupper()), vowel_dict.get(lc_form, 0.0), consonant_dict.get(lc_form, 0.0), numeral_dict.get(char, 0.0), punctuation_dict.get(char, 0.0)]
+
+def char_to_output(char):
+	return to_categorical([chardict[char]], nb_classes=len(dictchar))[0]
+
+def char_vec_to_feature(v):
+	return list(map(char_to_feature, v))
+
+def char_vec_to_output(v):
+	return to_categorical([chardict[char] for char in v], nb_classes=len(dictchar))
+
+def sample(a, temperature=1.0):
+	# helper function to sample an index from a probability array
+	a = numpy.log(a) / temperature
+	a = numpy.exp(a) / numpy.sum(numpy.exp(a))
+	return numpy.random.choice(len(a), p=a)
+
+def output_to_char(o):
+	index = sample(o, 0.7) #numpy.random.choice(len(chardict), p=o)
+	return dictchar[index]
+
+def output_vec_to_char(v):
+	return list(map(output_to_char, v))
+
+
+# Convert the corpus from chars to character features.
+fulltext_features = char_vec_to_feature(fulltext)
 
 
 # How many previous chars to supply as features for training?
@@ -86,28 +163,29 @@ nr_epochs = 20
 # Whether to train a stateful LSTM or not.
 stateful_lstm = False
 
-# The corpus size must be a multiple of batchsize for stateful training.
-#rounded_fulltext_size = (len(fulltext) // batch_size) * batch_size
-#fulltext = fulltext[:rounded_fulltext_size + seqlen - 1]
 
 # Convert the corpus to features.
 dataX = []
 dataY = []
+# The corpus size must be a multiple of batchsize for stateful training.
 for i in range(0, ((len(fulltext) - seqlen) // batch_size) * batch_size, 1):
-	dataX.append(fulltext[i:i+seqlen])
-	dataY.append(fulltext[i+seqlen])
+	dataX.append(fulltext_features[i:i+seqlen])
+	dataY.append(char_to_output(fulltext[i+seqlen]))
 
-# The output value should be one-hot encoded.
-y = to_categorical(dataY)
+# The input values have to be reshaped into a 3D tensor.
+#dataX = numpy.reshape(dataX, (len(dataX), seqlen, feature_vec_len))
+dataX = numpy.array(dataX)
+dataY = numpy.array(dataY)
+#print("Shape of dataX: ", dataX.shape)
 
-# The input values have to be reoriented; they are expressed as floats in [0, 1].
-x = numpy.reshape(dataX, (len(dataX), seqlen, 1))
-x = x/len(dictchar)
+#print(dataX)
+#print(dataY)
 
+#sys.exit(1)
 
 # Create the Keras model.
 model = Sequential()
-model.add(LSTM(network_width, stateful=stateful_lstm, batch_input_shape=(batch_size, seqlen, 1), return_sequences=True))
+model.add(LSTM(network_width, stateful=stateful_lstm, batch_input_shape=(batch_size, seqlen, feature_vec_len), return_sequences=True))
 model.add(Dropout(dropout_strength))
 model.add(LSTM(network_width, stateful=stateful_lstm))
 model.add(Dropout(dropout_strength))
