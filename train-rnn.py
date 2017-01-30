@@ -2,9 +2,6 @@
 # coding=UTF-8
 
 import sys
-
-
-import os
 from enum import Enum, unique
 import numpy
 import re
