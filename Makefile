@@ -30,9 +30,8 @@ bible21.txt: SF_2016-10-10_CZE_CZEB21_(CZECH\ BIBLE,\ PREKLAD\ 21_STOLETI).xml
 biblekjv.txt: SF_2009-01-23_ENG_KJV_(KING\ JAMES\ VERSION).xml
 	egrep '\s*</?(VERS|BIBLEBOOK|CHAPTER)' "$<" |dos2unix |sed -e 's/^\s*//;s|</VERS>||g;s|</CHAPTER>||;s|</BIBLEBOOK>||;s|<BIBLEBOOK bnumber="\([0-9]*\)" bname="\([^"]*\)" bsname="[^"]*">|Book \1: \2\n|;s|<CHAPTER cnumber="\([0-9]*\)">|(\1)|;s|<VERS vnumber="\([0-9]*\)">|\1. |;s/ / /g' > "$@"
 
-Bible21+-2015-pro-web.pdf:
-	wget 'http://www.bible21.cz/wp-content/uploads/2014/03/Bible21+-2015-pro-web.pdf' -O "$@"
-
+# Bible21+-2015-pro-web.pdf:
+# 	wget 'http://www.bible21.cz/wp-content/uploads/2014/03/Bible21+-2015-pro-web.pdf' -O "$@"
 
 perplexity.png: perplexity.gnuplot perplexity.tsv
 	gnuplot "$<"
