@@ -9,9 +9,10 @@ from enum import Enum, unique
 import numpy
 import re
 from keras.utils.np_utils import to_categorical
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers.recurrent import LSTM
 from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.wrappers import TimeDistributed
 from keras.callbacks import ModelCheckpoint
 
 from keras import backend
@@ -52,6 +53,26 @@ else:
 
 modelname = sys.argv[2]
 corpusname = sys.argv[3]
+
+
+
+class fullprint:
+	'context manager for printing full numpy arrays'
+
+	def __init__(self, **kwargs):
+		if 'threshold' not in kwargs:
+			kwargs['threshold'] = numpy.nan
+		self.opt = kwargs
+
+	def __enter__(self):
+		self._opt = numpy.get_printoptions()
+		numpy.set_printoptions(**self.opt)
+
+	def __exit__(self, type, value, traceback):
+		numpy.set_printoptions(**self._opt)
+
+
+
 
 # Load the corpus from the STDIN.
 #fulltext = list(sys.stdin.read())
@@ -190,13 +211,14 @@ model.add(Dropout(dropout_strength))
 model.add(LSTM(network_width, stateful=stateful_lstm))
 model.add(Dropout(dropout_strength))
 model.add(Dense(len(dictchar), activation="softmax"))
-model.compile(loss="categorical_crossentropy", optimizer="adam")
+
 
 # Allow checkpointing of an unfinished model after each epoch.
 #checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 #callbacks_list = [checkpoint]
 
 if (action == Action.TRAIN):
+	model.compile(loss="categorical_crossentropy", optimizer="adam")
 	model_basename = "%s-%d-dense%d+drop%f+dense%d+drop%f+lstm%d+drop%f+lstm%d+drop%f" % (modelname, seqlen, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength)
 	
 	# Train the model.
@@ -213,6 +235,91 @@ if (action == Action.TRAIN):
 		checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 		callbacks_list = [checkpoint]
 		model.fit(dataX, dataY, nb_epoch=nr_epochs, batch_size=batch_size, shuffle=(not stateful_lstm), callbacks=callbacks_list)
+		
+elif (action == Action.PREDICT):
+	# Beware that model files are not portable across platforms, while weights are.
+	#  But loading just the weights requires us to manually reconstruct the model layout,
+	#  while loading the model does not.
+	#  Choose whatever you want here.
+	#model.load_weights(modelname)
+	#model.compile(loss="categorical_crossentropy", optimizer="adam")
+	model = load_model(modelname)
+	
+	init_len = max(128, batch_size) # This length at the start of out buffer will be used as a seed to initialize the LSTM memory.
+	predict_len = max(1024, batch_size) # 140 is the target tweet size, the rest is there to create a larger possibility of finding a meaningful tweet.
+	total_len = init_len + predict_len # TODO make sure this length is divisible by batch_size
+	
+	# Tweet every 10 minutes for 5 hours → 31 tweets.
+	for tweet in range(31):
+		# Create the data array. First part will be prefilled with a seed from the corpus, the rest will be filled one-by-one by the predictor.
+		x = numpy.zeros([total_len + 1, seqlen, feature_vec_len])
+		
+		# Pick a random seed to kick the process off.
+		start = numpy.random.randint(0, len(dataX) - init_len - 1)
+		x[0:init_len] = dataX[start:start + init_len]
+		#print("Seed ends with: >>%s<<\n" % ("".join(output_vec_to_char(dataY[start:start + init_len]))))
+
+		generated_text = ""
+
+		# Generate characters starting with that seed.
+		for char_i in range(init_len, total_len):
+			#print("Predicting char %d." % char_i)
+			if stateful_lstm:
+				# Initialize the LSTM
+				model.reset_states()
+				for batch_start in range(0, char_i, batch_size):
+					model.predict_on_batch(x[batch_start:batch_start + batch_size])
+				
+				while True:
+					# Predict a new character
+					batch_start = (char_i // batch_size) * batch_size
+					which_char_in_batch = char_i - batch_start
+					
+					output = model.predict_on_batch(x[batch_start:batch_start + batch_size])[which_char_in_batch]
+					prediction = output_to_char(output) # , verbose=0
+
+					generated_text += prediction
+
+					x[char_i] = char_to_feature(prediction)
+					
+					#import pdb;pdb.set_trace()
+					#with fullprint():
+					#	print("Our corpus is: ", x)
+					
+					#sys.stderr.write('.')
+					sys.stderr.write(prediction)
+					sys.stderr.flush()
+					
+					if (which_char_in_batch == batch_size - 1):
+						# We are at the end of the batch; let's continue with the next batch directly, without restarting.
+						char_i += 1
+						continue
+					else:
+						# We're not at the end of the batch. We have to restart in order to continue, because re-predicting on the same batch would screw the LSTM memory.
+						break
+			else:
+				#with fullprint():
+				#	print("Our corpus is: ", x)
+				#print("Running prediction on batch %d-%d." % (char_i-batch_size, char_i - 1))
+				output = model.predict_on_batch(x[char_i-batch_size:char_i])
+				predictions = output_vec_to_char(output)
+				#print("Predicted chars >>%s<<." % "".join(predictions))
+				assert(len(predictions) == batch_size)
+				prediction = predictions[-1]
+				
+				generated_text += prediction
+				
+				#print("Updating position %d with letter %s: features" % (char_i, prediction), char_to_feature(prediction))
+				x[char_i, :seqlen-1] = x[char_i - 1, 1:]
+				x[char_i, seqlen-1] = char_to_feature(prediction)
+				
+				#sys.stdout.write(prediction)
+				#sys.stdout.flush()
+
+		#print("Generated text: “%s”" % generated_text)
+		#print("\n\n", generated_text)
+		#print("\n--------------------------------------------------------------------------------\n\n")
+		sys.stdout.write('%s\x00' % generated_text)
 else:
 	sys.stderr.write("Unrecognized action error.\n")
 	sys.exit(1)
