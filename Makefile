@@ -1,4 +1,4 @@
-.PHONY: clean all vybli-cs vybli-en tweet-cs tweet-en
+.PHONY: clean all train vybli-cs vybli-en tweet-cs tweet-en
 
 # Set your model names here
 MODEL_CS=vybli-cs-features2-fixed-32-dense512+drop0.200000+dense512+drop0.200000+lstm512+drop0.200000-02-1.6890.h5
@@ -10,6 +10,8 @@ CUDA_VISIBLE_DEVICES=0
 LC_ALL=en_US.utf8
 
 all: tweet-cs tweet-en
+
+train: vybli-cs vybli-en
 
 tweet-%: predictions-%.txt twitter.py
 	./twitter.py < "$<"
