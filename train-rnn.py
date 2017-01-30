@@ -16,6 +16,21 @@ from keras.layers.recurrent import LSTM
 from keras.layers.core import Dense, Dropout, Activation
 from keras.callbacks import ModelCheckpoint
 
+from keras import backend
+
+if backend.backend() == 'tensorflow':
+	# Set allow_growth on the TF session to be nice to other guys using the cluster I'm training on.
+	# The flag causes TF to not fill all the memory available on the GPU, but to allocate it on the fly instead.
+	# Also don't forget to check nvidia-smi for free GPUs and restrict the program to those using
+	# CUDA_VISIBLE_DEVICES="2" environment variable.
+	import tensorflow as tf
+
+	tf_config = tf.ConfigProto(allow_soft_placement=True)
+	tf_config.gpu_options.allow_growth = True
+	tf_session = tf.Session(config=tf_config)
+	backend.set_session(tf_session)
+
+
 
 # Load the corpus from the STDIN.
 #everything = list(sys.stdin.read())
