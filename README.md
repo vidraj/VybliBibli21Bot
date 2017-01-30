@@ -22,7 +22,7 @@ access_token_secret = 'ijkl'
 
 Then train a model on an UTF-8-encoded corpus by running `train-rnn.py --train model-name-prefix corpus.txt` and get some predictions seeded by another text by running `train-rnn.py --predict full-model-name text-seeds.txt`. Predictions are printed to STDOUT as NULL-terminated UTF-8 strings. The predictions can be piped directly into the twitter part (`twitter.py`), which sends them to the account specified by your credentials.
 
-You can also use the supplied Makefile for ease of use. Run `make train` to train some models and run `make "MODEL_CS="`
+You can also use the supplied Makefile for ease of use. Run `make train` to train some models and run `make "MODEL_CS=model-name"`
 
 
 ## Description
