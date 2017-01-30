@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding=UTF-8
 
 import sys
 
@@ -17,7 +18,9 @@ from keras.callbacks import ModelCheckpoint
 
 
 # Load the corpus from the STDIN.
-everything = sys.stdin.read()
+#everything = list(sys.stdin.read())
+with open(corpusname, "rb") as f: # Binary mode for cross-compatibility between Python2 and Python3 – in 2, there is no difference and I have to call decode on the returned value. In 3, I can only call decode on bytes, which are returned in binary mode only. Therefore choose binary.
+	everything = list(f.read().decode('utf-8'))
 
 
 # Find all the character types occuring in the corpus. Also serves as mapping from char-IDs to chars
