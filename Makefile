@@ -2,12 +2,25 @@
 
 vybli-model-small.h5: bible21-small.txt
 	ulimit -t unlimited && nice -n 19 ./train-rnn.py "$@" < "$<"
+# Set your model names here
+MODEL_CS=vybli-cs-features2-fixed-32-dense512+drop0.200000+dense512+drop0.200000+lstm512+drop0.200000-02-1.6890.h5
+MODEL_EN=vybli-en-features2-fixed-32-dense512+drop0.200000+dense512+drop0.200000+lstm512+drop0.200000-01-1.2196.h5
 
 vybli-model.h5: bible21.txt
 	ulimit -t unlimited && nice -n 19 ./train-rnn.py "$@" < "$<"
+# Limit TensorFlow to just a single card.
+CUDA_VISIBLE_DEVICES=0
+# Ensure a stable collation order.
+LC_ALL=en_US.utf8
 
 bible21-small.txt: bible21.txt
 	head -c 10000 "$<" > "$@"
+predictions-cs.txt: bible21.txt ${MODEL_CS} train-rnn.py
+	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES}" LC_ALL="${LC_ALL}" ./train-rnn.py --predict ${MODEL_CS} "$<" > "$@"
+
+predictions-en.txt: biblekjv.txt ${MODEL_EN} train-rnn.py
+	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES}" LC_ALL="${LC_ALL}" ./train-rnn.py --predict ${MODEL_EN} "$<" > "$@"
+
 
 bible21.txt: SF_2016-10-10_CZE_CZEB21_(CZECH\ BIBLE,\ PREKLAD\ 21_STOLETI).xml
 	#Bible21+-2015-pro-web.pdf
