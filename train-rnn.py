@@ -3,12 +3,9 @@
 
 import sys
 
-if len(sys.argv) != 2:
-	sys.stderr.write("Error: filename for model saving required.\nUsage:\n\t%s model-file\n" % (sys.argv[0]))
-	sys.exit(1)
-
 
 import os
+from enum import Enum, unique
 import numpy
 from keras.utils.np_utils import to_categorical
 from keras.models import Sequential
@@ -31,6 +28,29 @@ if backend.backend() == 'tensorflow':
 	backend.set_session(tf_session)
 
 
+@unique
+class Action(Enum):
+	TRAIN = 1
+	PREDICT = 2
+
+usage_string = "Usage:\n\t%s (--train|--predict) model-file corpus-file\n" % (sys.argv[0])
+
+if len(sys.argv) != 4:
+	sys.stderr.write("Error: action, model filename and corpus name required.\n" + usage_string)
+	sys.exit(1)
+
+action_name = sys.argv[1]
+action = None
+if action_name == "--train":
+	action = Action.TRAIN
+elif action_name == "--predict":
+	action = Action.PREDICT
+else:
+	sys.stderr.write("Error: wrong action specified, please use --train or --predict as the first argument.\n" + usage_string)
+	sys.exit(1)
+
+modelname = sys.argv[2]
+corpusname = sys.argv[3]
 
 # Load the corpus from the STDIN.
 #everything = list(sys.stdin.read())
@@ -94,10 +114,15 @@ model.compile(loss="categorical_crossentropy", optimizer="adam")
 #checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 #callbacks_list = [checkpoint]
 
-# Train the model.
-for epoch in range(nr_epochs):
-	# Other params: callbacks=callbacks_list
-	#               initial_epoch=epoch      # Not yet in the version from pip.
-	model.fit(x, y, nb_epoch=1, batch_size=batch_size, shuffle=False)
-	model.save("%s-%d-lstm%d+drop%f+lstm%d+drop%f-%d.h5" % (sys.argv[1], seqlen, network_width, dropout_strength, network_width, dropout_strength, epoch))
-	model.reset_states()
+if (action == Action.TRAIN):
+	model_basename = "%s-%d-dense%d+drop%f+dense%d+drop%f+lstm%d+drop%f+lstm%d+drop%f" % (modelname, seqlen, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength)
+	
+	# Train the model.
+	# Allow checkpointing of an unfinished model after each epoch.
+	filepath = model_basename + "-{epoch:02d}-{loss:.4f}.h5"
+	checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+	callbacks_list = [checkpoint]
+	model.fit(dataX, dataY, nb_epoch=nr_epochs, batch_size=batch_size, shuffle=(not stateful_lstm), callbacks=callbacks_list)
+else:
+	sys.stderr.write("Unrecognized action error.\n")
+	sys.exit(1)
