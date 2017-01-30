@@ -1,4 +1,4 @@
-.PHONY: clean
+.PHONY: clean all vybli-cs vybli-en tweet-cs tweet-en
 
 # Set your model names here
 MODEL_CS=vybli-cs-features2-fixed-32-dense512+drop0.200000+dense512+drop0.200000+lstm512+drop0.200000-02-1.6890.h5
@@ -8,6 +8,11 @@ MODEL_EN=vybli-en-features2-fixed-32-dense512+drop0.200000+dense512+drop0.200000
 CUDA_VISIBLE_DEVICES=0
 # Ensure a stable collation order.
 LC_ALL=en_US.utf8
+
+all: tweet-cs tweet-en
+
+tweet-%: predictions-%.txt twitter.py
+	./twitter.py < "$<"
 
 predictions-cs.txt: bible21.txt ${MODEL_CS} train-rnn.py
 	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES}" LC_ALL="${LC_ALL}" ./train-rnn.py --predict ${MODEL_CS} "$<" > "$@"
