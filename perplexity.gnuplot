@@ -1,6 +1,6 @@
 set title "Cross perplexity of test data for the first 10 epochs"
 # png transparent enhanced
-set terminal png enhanced giant font "arial,18" size 1600, 1200
+set terminal png enhanced giant font "arial,18" size 1024, 768
 set output "perplexity.png"
 
 # set datafile separator "\t"
