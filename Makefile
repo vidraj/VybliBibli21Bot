@@ -42,6 +42,7 @@ biblekjv.txt: SF_2009-01-23_ENG_KJV_(KING\ JAMES\ VERSION).xml
 
 perplexity.png: perplexity.gnuplot perplexity.tsv
 	gnuplot "$<"
+	optipng -o7 -zm1-9 "$@"
 
 clean:
 	rm -f bible21.txt biblekjv.txt
