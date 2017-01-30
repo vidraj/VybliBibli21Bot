@@ -73,6 +73,8 @@ del(everything)
 
 # How many previous chars to supply as features for training?
 seqlen = 6
+# How long is a feature-vector?
+feature_vec_len = len(fulltext_features[0])
 # How wide should each LSTM layer be?
 network_width = 256
 # Strength of dropout after each LSTM layer.
@@ -81,6 +83,8 @@ dropout_strength = 0.05
 batch_size = 64
 # How many epochs to train for?
 nr_epochs = 20
+# Whether to train a stateful LSTM or not.
+stateful_lstm = False
 
 # The corpus size must be a multiple of batchsize for stateful training.
 #rounded_fulltext_size = (len(fulltext) // batch_size) * batch_size
@@ -103,9 +107,9 @@ x = x/len(dictchar)
 
 # Create the Keras model.
 model = Sequential()
-model.add(LSTM(network_width, stateful=True, batch_input_shape=(batch_size, seqlen, 1), return_sequences=True))
+model.add(LSTM(network_width, stateful=stateful_lstm, batch_input_shape=(batch_size, seqlen, 1), return_sequences=True))
 model.add(Dropout(dropout_strength))
-model.add(LSTM(network_width, stateful=True))
+model.add(LSTM(network_width, stateful=stateful_lstm))
 model.add(Dropout(dropout_strength))
 model.add(Dense(len(dictchar), activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam")
@@ -118,11 +122,19 @@ if (action == Action.TRAIN):
 	model_basename = "%s-%d-dense%d+drop%f+dense%d+drop%f+lstm%d+drop%f+lstm%d+drop%f" % (modelname, seqlen, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength, network_width, dropout_strength)
 	
 	# Train the model.
-	# Allow checkpointing of an unfinished model after each epoch.
-	filepath = model_basename + "-{epoch:02d}-{loss:.4f}.h5"
-	checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
-	callbacks_list = [checkpoint]
-	model.fit(dataX, dataY, nb_epoch=nr_epochs, batch_size=batch_size, shuffle=(not stateful_lstm), callbacks=callbacks_list)
+	if stateful_lstm:
+		for epoch in range(nr_epochs):
+			# Other params: callbacks=callbacks_list
+			#               initial_epoch=epoch      # Not yet in the version from pip.
+			model.fit(dataX, dataY, nb_epoch=1, batch_size=batch_size, shuffle=(not stateful_lstm))
+			model.save("%s-%d.h5" % (model_basename, epoch))
+			model.reset_states()
+	else:
+		# Allow checkpointing of an unfinished model after each epoch.
+		filepath = model_basename + "-{epoch:02d}-{loss:.4f}.h5"
+		checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+		callbacks_list = [checkpoint]
+		model.fit(dataX, dataY, nb_epoch=nr_epochs, batch_size=batch_size, shuffle=(not stateful_lstm), callbacks=callbacks_list)
 else:
 	sys.stderr.write("Unrecognized action error.\n")
 	sys.exit(1)
