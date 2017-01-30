@@ -13,4 +13,5 @@ SF_2016-10-10_CZE_CZEB21_(CZECH BIBLE, PREKLAD 21_STOLETI).zip
 bible21.txt
 biblekjv.txt
 vybli-*.h5
-perplexity.png
+# This file is needed for display in README
+#perplexity.png
